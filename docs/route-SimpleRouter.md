@@ -28,6 +28,7 @@ class SimpleRouter implements im\route\Middleware, im\route\Router, im\route\Met
 
     // Methods
     public __construct()
+    public setLoader(im\route\ControllerLoader|callable $loader): void
     public addRoute(string $path, im\route\Controller|callable|string $controller, int $flags = im\route\Router::M_ANY): void
     public addNamedRoute(string $name, string $path, im\route\Controller|callable|string $controller, int $flags = im\route\Router::M_ANY): void
     public getRoutePath(string $name, array $args = Array, null|string $wildcard = NULL): null|string
@@ -53,6 +54,7 @@ class SimpleRouter implements im\route\Middleware, im\route\Router, im\route\Met
 | Name | Description |
 | :--- | :---------- |
 | [__SimpleRouter&nbsp;::&nbsp;\_\_construct__](route-SimpleRouter-__construct.md) |  |
+| [__SimpleRouter&nbsp;::&nbsp;setLoader__](route-SimpleRouter-setLoader.md) | Set a controller loader for this router |
 | [__SimpleRouter&nbsp;::&nbsp;addRoute__](route-SimpleRouter-addRoute.md) | Add a route to this router |
 | [__SimpleRouter&nbsp;::&nbsp;addNamedRoute__](route-SimpleRouter-addNamedRoute.md) |  |
 | [__SimpleRouter&nbsp;::&nbsp;getRoutePath__](route-SimpleRouter-getRoutePath.md) | Built a complete path from a named route |

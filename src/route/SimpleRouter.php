@@ -43,11 +43,24 @@ class SimpleRouter implements Middleware, Router {
     /** @internal */
     protected ListArray $routes;
 
+    /** @internal */
+    protected /*callable*/ $loader = null;
+
     /**
      *
      */
     public function __construct() {
         $this->routes = new Vector();
+    }
+
+    /**
+     * Set a controller loader for this router
+     *
+     * @param $loader
+     *      A loader class or callable
+     */
+    public function setLoader(ControllerLoader|callable $loader): void {
+        $this->loader = is_callable($loader) ? $loader : [$loader, "onLoadController"];
     }
 
     /**
@@ -320,7 +333,12 @@ class SimpleRouter implements Middleware, Router {
                             throw new Exception("Controller class '". $pair["class"] ."' could not be found or is not part of '". Controller::class ."'");
                         }
 
-                        $controller = new ($pair["class"])();
+                        if ($this->loader != null) {
+                            $controller = ($this->loader)($this, $pair["class"]);
+
+                        } else {
+                            $controller = new ($pair["class"])();
+                        }
 
                     } else {
                         $controller = $pair["class"];

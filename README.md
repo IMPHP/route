@@ -9,6 +9,18 @@ You can view the [Full Documentation](docs/route.md) to lean more about what thi
 
 ### Installation
 
+__Using .phar library__
+
+```sh
+wget https://github.com/IMPHP/route/releases/download/<version>/imphp-route.phar
+```
+
+```php
+require "imphp-route.phar";
+
+...
+```
+
 __Clone via git__
 
 ```sh

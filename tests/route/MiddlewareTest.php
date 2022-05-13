@@ -3,7 +3,7 @@
 use PHPUnit\Framework\TestCase;
 use im\route\OrderedStack;
 use im\route\MiddlewareStack;
-use im\route\SimpleRouter;
+use im\route\MiddlewareRouter;
 use im\route\Router;
 use im\http\msg\Request;
 use im\http\msg\Response;
@@ -38,8 +38,8 @@ final class MiddlewareTest extends TestCase {
      *
      */
     public function test_router(): void {
-        $router = new SimpleRouter();
-        $router->addRoute("/mypage/{id:number}/?test", function(Request $request, Router $router): Response {
+        $router = new MiddlewareRouter();
+        $router->addRoute("/mypage/{id:number}/?test", function(Router $router, Request $request, Response $response): Response {
             $response = new HttpResponseBuilder();
             $response->getBody()->write("Response body");
 
@@ -84,11 +84,6 @@ final class MiddlewareTest extends TestCase {
         $this->assertEquals(
             "/otherpage/page/10",
             $router->getRoutePath("testpage", ["id" => 10, "optional" => "page"])
-        );
-
-        $this->assertEquals(
-            "/otherpage/page/10/more/pages",
-            $router->getRoutePath("testpage", ["id" => 10, "optional" => "page"], "/more/pages")
         );
     }
 }

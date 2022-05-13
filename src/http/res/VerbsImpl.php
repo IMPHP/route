@@ -2,7 +2,7 @@
 /*
  * This file is part of the IMPHP Project: https://github.com/IMPHP
  *
- * Copyright (c) 2017 Daniel Bergløv, License: MIT
+ * Copyright (c) 2022 Daniel Bergløv, License: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -19,33 +19,33 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace im\route;
+namespace im\http\res;
 
-use im\http\msg\Request;
-use im\http\msg\Response;
+use Exception;
 use im\http\Verbs;
 
 /**
- * Defines a Middleware stack
+ *
  */
-interface MiddlewareStack extends Verbs {
+trait VerbsImpl {
 
     /**
-     * Add a middleware to this stack
-     *
-     * @param $middleware
-     *      A middleware instance, class name or a callable
-     *
-     * @param $flags
-     *      Flags that defines what request methods are to be used with this middleware
+     * @inheritDoc
      */
-    function addMiddleware(string|Middleware|callable $middleware, int $flags = Verbs::ANY): void;
+    #[Override("im\http\Verbs")]
+    public function verb2flags(string ...$methods): int {
+        $flags = 0;
 
-    /**
-     * Start processing the first or next middleware in the stack
-     *
-     * @param $request
-     *      The request to process
-     */
-    function process(Request $request): Response;
+        foreach ($methods as $method) {
+            $const = sprintf("%s::%s", Verbs::class, strtoupper($method));
+
+            if (!defined($const)) {
+                throw new Exception("Trying to use invalid method '$method'");
+            }
+
+            $flags |= constant($const);
+        }
+
+        return $flags;
+    }
 }

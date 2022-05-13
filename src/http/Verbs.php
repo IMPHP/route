@@ -2,7 +2,7 @@
 /*
  * This file is part of the IMPHP Project: https://github.com/IMPHP
  *
- * Copyright (c) 2017 Daniel Bergløv, License: MIT
+ * Copyright (c) 2022 Daniel Bergløv, License: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -19,33 +19,69 @@
  * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace im\route;
-
-use im\http\msg\Request;
-use im\http\msg\Response;
-use im\http\Verbs;
+namespace im\http;
 
 /**
- * Defines a Middleware stack
+ * This is used to define request methods as flags.
+ * This allows them to be easily grouped together and identified without much overheat.
  */
-interface MiddlewareStack extends Verbs {
+interface Verbs {
 
     /**
-     * Add a middleware to this stack
-     *
-     * @param $middleware
-     *      A middleware instance, class name or a callable
-     *
-     * @param $flags
-     *      Flags that defines what request methods are to be used with this middleware
+     * @var int = 0x01
      */
-    function addMiddleware(string|Middleware|callable $middleware, int $flags = Verbs::ANY): void;
+    const GET = 0x01;
 
     /**
-     * Start processing the first or next middleware in the stack
-     *
-     * @param $request
-     *      The request to process
+     * @var int = 0x02
      */
-    function process(Request $request): Response;
+    const HEAD = 0x02;
+
+    /**
+     * @var int = 0x04
+     */
+    const POST = 0x04;
+
+    /**
+     * @var int = 0x08
+     */
+    const PUT = 0x08;
+
+    /**
+     * @var int = 0x10
+     */
+    const DELETE = 0x10;
+
+    /**
+     * @var int = 0x20
+     */
+    const CONNECT = 0x20;
+
+    /**
+     * @var int = 0x40
+     */
+    const OPTIONS = 0x40;
+
+    /**
+     * @var int = 0x80
+     */
+    const TRACE = 0x80;
+
+    /**
+     * @var int = 0x0100
+     */
+    const PATCH = 0x0100;
+
+    /**
+     * @var int = 0x01FF
+     */
+    const ANY = 0x01FF;
+
+    /**
+     * Return flags based on one or more string methods.
+     *
+     * @param $methods
+     *      Methods to group into a flag integer.
+     */
+    function verb2flags(string ...$methods): int;
 }

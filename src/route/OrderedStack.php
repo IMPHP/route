@@ -21,20 +21,25 @@
 
 namespace im\route;
 
-use im\http\msg\HttpResponseBuilder;
+use im\http\msg\HttpResponse;
 use im\http\msg\Request;
 use im\http\msg\Response;
-use im\util\IndexArray;
+use im\http\Verbs;
+use im\http\res\VerbsImpl;
+use im\util\MutableListArray;
 use im\util\Vector;
 use Exception;
+use stdClass;
 
 /**
  * Provides an implementation of `im\route\MiddlewareStack`
  */
 class OrderedStack implements MiddlewareStack {
 
+    use VerbsImpl;
+
     /** @internal */
-    protected IndexArray $middleware;
+    protected MutableListArray $middleware;
 
     /** @internal */
     protected int $level = 0;
@@ -53,31 +58,12 @@ class OrderedStack implements MiddlewareStack {
      * @inheritDoc
      */
     #[Override("im\route\MiddlewareStack")]
-    public function getFlags(string ...$methods): int {
-        $flags = 0;
+    public function addMiddleware(string|Middleware|callable $middleware, int $flags = Verbs::ANY): void {
+        $mdInfo = new stdClass();
+        $mdInfo->flags = $flags;
+        $mdInfo->callee = $middleware;
 
-        foreach ($methods as $method) {
-            $const = sprintf("%s::M_%s", MiddlewareStack::class, strtoupper($method));
-
-            if (!defined($const)) {
-                throw new Exception("Trying to use invalid method '$method'");
-            }
-
-            $flags |= constant($const);
-        }
-
-        return $flags;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    #[Override("im\route\MiddlewareStack")]
-    public function addMiddleware(string|Middleware|callable $middleware, int $flags = MiddlewareStack::M_ANY): void {
-        $this->middleware->add([
-            "flags" => $flags,
-            "class" => $middleware
-        ]);
+        $this->middleware->add($mdInfo);
     }
 
     /**
@@ -88,28 +74,28 @@ class OrderedStack implements MiddlewareStack {
         $this->level++;
 
         $middleware = null;
-        $flag = $this->getFlags( $method = $request->getMethod() );
+        $flag = $this->verb2flags( $request->getMethod() );
 
         while ($this->offset < $this->middleware->length()) {
-            $pair = $this->middleware->get($this->offset++);
+            $mdInfo = $this->middleware->get($this->offset++);
 
-            if ($pair["flags"] & $flag) {
-                $middleware = $pair["class"]; break;
+            if ($mdInfo->flags & $flag) {
+                $middleware = $mdInfo->callee; break;
             }
         }
 
         if ($middleware == null) {
-            $response = new HttpResponseBuilder();
+            $response = new HttpResponse();
 
         } else {
-            if (is_string($middleware)) {
-                if (!class_exists($middleware, true)
-                        || !is_subclass_of($middleware, Middleware::class)) {
+            if (is_string($middleware)
+                    && class_exists($middleware, true)
+                    && is_subclass_of($middleware, Middleware::class)) {
 
-                    throw new Exception("Middleware class '$request' could not be found or is not part of '". Middleware::class ."'");
-                }
+                $middleware = new ($middleware)();
 
-                $middleware = new $middleware();
+            } else if (!is_callable($middleware) && (is_string($middleware) || !($middleware instanceof Middleware))) {
+                throw new Exception("The class '". (is_string($middleware) ? $middleware : get_class($middleware)) ."' must be a member of '". Middleware::class ."'");
             }
 
             if ($middleware instanceof Middleware) {
@@ -120,38 +106,8 @@ class OrderedStack implements MiddlewareStack {
             }
         }
 
-        /*
-         * Handler internal redirects without calling the client
-         */
         if (--$this->level == 0) {
             $this->offset = 0;
-
-            if ($response->getStatusCode() == Response::STATUS_TEMPORARY_REDIRECT
-                    || $response->getStatusCode() == Response::STATUS_PERMANENT_REDIRECT) {
-
-                $request = $request->getBuilder();
-                $uri = $request->getUri()->getBuilder();
-
-                if (($baseUrl = $uri->getBaseUrl()) != null
-                        && ($redirect = $response->getHeaderLine("Location")) != null
-                        && str_starts_with($redirect, $baseUrl)) {
-
-                    $path = "/". ltrim(substr($redirect, strlen($baseUrl) + 1), "/");
-
-                    if (($pos = strpos($path, "?")) !== false) {
-                        $uri->setQuery(substr($path, $pos+1));
-                        $uri->setPath(substr($path, 0, $pos));
-
-                    } else {
-                        $uri->setPath($path);
-                    }
-
-                    $request->setUri($uri);
-
-                    // Process redirect
-                    $response = $this->process($request);
-                }
-            }
         }
 
         return $response;

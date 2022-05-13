@@ -32,14 +32,17 @@ interface Controller {
     /**
      * Called by the `Router` when the controller should process a matching request
      *
-     * @param $request
-     *      The request to process
-     *
      * @param $router
      *      The router that called this controller
      *
+     * @param $request
+     *      The request to process
+     *
+     * @param $response
+     *      Optional response to populate
+     *
      * @return
-     *      The controller should return a response to serve to the calling client
+     *      The controller returns a response to serve to the client
      */
-    function onProcessRequest(Request $request, Router $router): Response;
+    function onProcessRequest(Router $router, Request $request, Response $response = NULL): Response;
 }

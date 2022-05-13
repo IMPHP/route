@@ -2,7 +2,7 @@
 /*
  * This file is part of the IMPHP Project: https://github.com/IMPHP
  *
- * Copyright (c) 2017 Daniel Bergløv, License: MIT
+ * Copyright (c) 2022 Daniel Bergløv, License: MIT
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software
  * and associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -21,46 +21,36 @@
 
 namespace im\route;
 
+use im\http\msg\HttpResponse;
 use im\http\msg\HttpResponseBuilder;
 use im\http\msg\Request;
 use im\http\msg\Response;
-use im\util\ListArray;
+use im\http\Verbs;
+use im\http\res\VerbsImpl;
+use im\util\MutableListArray;
 use im\util\Vector;
 use im\util\Map;
 use im\util\StringBuilder;
 use Exception;
+use stdClass;
 
 /**
  * An implementation of `im\route\Router` that works as a middleware.
  *
- * This router is added as middleware to a `MiddlewareStack`.
- * It should always be the top middleware in the stack as it will not
- * progress any higher. It will launch a controller and then start to
- * return the response.
+ * This router can be added as middleware to a `MiddlewareStack`.
  */
-class SimpleRouter implements Middleware, Router {
+class MiddlewareRouter implements Middleware, Router {
+
+    use VerbsImpl;
 
     /** @internal */
-    protected ListArray $routes;
-
-    /** @internal */
-    protected /*callable*/ $loader = null;
+    protected MutableListArray $routes;
 
     /**
      *
      */
     public function __construct() {
         $this->routes = new Vector();
-    }
-
-    /**
-     * Set a controller loader for this router
-     *
-     * @param $loader
-     *      A loader class or callable
-     */
-    public function setLoader(ControllerLoader|callable $loader): void {
-        $this->loader = is_callable($loader) ? $loader : [$loader, "onLoadController"];
     }
 
     /**
@@ -136,26 +126,28 @@ class SimpleRouter implements Middleware, Router {
      *      Flags that defines what request methods are to be used with this controller
      */
     #[Override("im\route\Router")]
-    public function addRoute(string $path, string|Controller|callable $controller, int $flags = Router::M_ANY): void {
-        $this->routes->add([
-            "name" => null,
-            "flags" => $flags,
-            "route" => $path,
-            "class" => $controller
-        ]);
+    public function addRoute(string $path, string|Controller|callable $controller, int $flags = Verbs::ANY): void {
+        $routeInfo = new stdClass();
+        $routeInfo->name = null;
+        $routeInfo->flags = $flags;
+        $routeInfo->route = $path;
+        $routeInfo->controller = $controller;
+
+        $this->routes->add($routeInfo);
     }
 
     /**
      * @inheritDoc
      */
     #[Override("im\route\Router")]
-    public function addNamedRoute(string $name, string $path, string|Controller|callable $controller, int $flags = Router::M_ANY): void {
-        $this->routes->add([
-            "name" => $name,
-            "flags" => $flags,
-            "route" => $path,
-            "class" => $controller
-        ]);
+    public function addNamedRoute(string $name, string $path, string|Controller|callable $controller, int $flags = Verbs::ANY): void {
+        $routeInfo = new stdClass();
+        $routeInfo->name = $name;
+        $routeInfo->flags = $flags;
+        $routeInfo->route = $path;
+        $routeInfo->controller = $controller;
+
+        $this->routes->add($routeInfo);
     }
 
     /**
@@ -183,28 +175,21 @@ class SimpleRouter implements Middleware, Router {
      * @param $args
      *      Arguments to replace within the route
      *
-     * @param $wildcard
-     *      An optional sub-path that will replace a wilcard `/*`
-     *
      * @return
      *      This will return `NULL` if the named route does not exist
      */
     #[Override("im\route\Router")]
-    public function getRoutePath(string $name, array $args = [], string $wildcard = null): ?string {
-        foreach ($this->routes as $pair) {
-            if (!empty($pair["name"]) && $pair["name"] == $name) {
-                $route = $pair["route"];
-
-                if (!empty($wildcard)) {
-                    $wildcard = "/".trim($wildcard, "/");
-                }
+    public function getRoutePath(string $name, array $args = []): ?string {
+        foreach ($this->routes as $routeInfo) {
+            if (!empty($routeInfo->name) && $routeInfo->name == $name) {
+                $route = $routeInfo->route;
 
                 foreach ($args as $key => $value) {
                     $route = preg_replace("/\{".preg_quote($key)."(\:[^\}]+)?\}/", (string) $value, $route);
                 }
 
                 $route = preg_replace("/\\?{[^\}]+\}/", "", $route);
-                $route = rtrim(str_replace(["?", "/*", "//"], ["", $wildcard ?? "", "/"], $route), "/");
+                $route = rtrim(str_replace(["?", "/*", "//"], ["", "", "/"], $route), "/");
 
                 return empty($route) ? "/" : $route;
             }
@@ -214,32 +199,12 @@ class SimpleRouter implements Middleware, Router {
     }
 
     /**
-     * @inheritDoc
-     */
-    #[Override("im\route\Router")]
-    public function getFlags(string ...$methods): int {
-        $flags = 0;
-
-        foreach ($methods as $method) {
-            $const = sprintf("%s::M_%s", Router::class, strtoupper($method));
-
-            if (!defined($const)) {
-                throw new Exception("Trying to use invalid method '$method'");
-            }
-
-            $flags |= constant($const);
-        }
-
-        return $flags;
-    }
-
-    /**
      * Translates a route into a proper RegExp that can be used to match
      * a request path.
      *
      * @internal
      */
-    protected function makeRegExp(string $route): string {
+    protected function compileRoute(string $route): string {
         if (empty($route) || $route == "/") {
             return "/^\\/?$/";
         }
@@ -288,7 +253,31 @@ class SimpleRouter implements Middleware, Router {
     }
 
     /**
-     * Launches the router instance to locate a run a controller
+     * Manually process a request
+     *
+     * @note
+     *      This router is built as a middleware. Rather than executing a request manually,
+     *      it can be added and executed from within a `im\route\MiddlewareStack`.
+     *
+     * @param $request
+     *      A request to process
+     *
+     */
+    #[Override("im\route\Router")]
+    public function process(Request $request): Response {
+        return $this->onProcess(
+            $request,
+            new class() implements MiddlewareStack {
+                function addMiddleware(string|Middleware|callable $middleware, int $flags = Verbs::ANY): void {}
+                function process(Request $request): Response {
+                    return new HttpResponse();
+                }
+            }
+        );
+    }
+
+    /**
+     *
      *
      * @internal
      */
@@ -296,58 +285,48 @@ class SimpleRouter implements Middleware, Router {
     public function onProcess(Request $request, MiddlewareStack $stack): Response {
         $controller = null;
         $path = $request->getUri()->getPath();
-        $method = $request->getMethod();
-        $flag = $stack->getFlags($method);
+        $flag = $this->verb2flags( $request->getMethod() );
 
-        foreach ($this->routes as $pair) {
-            if ($pair["flags"] & $flag) {
-                $route = $this->makeRegExp($pair["route"]);
+        foreach ($this->routes as $routeInfo) {
+            if ($routeInfo->flags & $flag) {
+                $route = $this->compileRoute($routeInfo->route);
 
                 if (preg_match($route, $path, $matches)) {
-                    /*
-                     * Deal with internal redirects
-                     */
-                    if (is_string($pair["class"]) && $pair["class"][0] == "/") {
+                    if (is_string($routeInfo->controller) && $routeInfo->controller[0] == "/") {
+                        $controller = $routeInfo->controller;
+
                         /*
                          * Redirect, example: '/new/path'
                          */
-                         if (strpos($pair["class"], "$") !== false) {
+                         if (strpos($controller, "$") !== false) {
                              // Copy part of the original url '/old/:num:' -> '/new/path/$1'
-                             $pair["class"] = preg_replace($route, $pair["class"], $path);
+                             $controller = preg_replace($route, $controller, $path);
                          }
 
                          $uri = $request->getUri()->getBuilder();
-                         $uri->setPath($pair["class"]);
+                         $uri->setPath($controller);
+                         $request->setUri($uri);
 
-                         // Tell the calling middleware that we are not doing any more work on this
-                         $response = new HttpResponseBuilder(Response::STATUS_PERMANENT_REDIRECT);
-                         $response->setHeader("Location", $uri->toString());
-
-                         return $response;
+                         return $this->onProcess($request, $stack);
                     }
 
-                    if (is_string($pair["class"])) {
-                        if (!class_exists($pair["class"], true)
-                                || !is_subclass_of($pair["class"], Controller::class)) {
+                    if (is_string($routeInfo->controller)
+                            && class_exists($routeInfo->controller, true)
+                            && is_subclass_of($routeInfo->controller, Controller::class)) {
 
-                            throw new Exception("Controller class '". $pair["class"] ."' could not be found or is not part of '". Controller::class ."'");
-                        }
+                        $controller = new ($routeInfo->controller)();
 
-                        if ($this->loader != null) {
-                            $controller = ($this->loader)($this, $pair["class"]);
+                    } else if (is_callable($routeInfo->controller)
+                            || (!is_string($routeInfo->controller) && $routeInfo->controller instanceof Controller)) {
 
-                        } else {
-                            $controller = new ($pair["class"])();
-                        }
+                        $controller = $routeInfo->controller;
 
                     } else {
-                        $controller = $pair["class"];
+                        throw new Exception("The class '". (is_string($routeInfo->controller) ? $routeInfo->controller : get_class($routeInfo->controller)) ."' must be a member of '". Controller::class ."'");
                     }
 
-                    $segments = new Map( array_filter($matches, "is_string", ARRAY_FILTER_USE_KEY) );
-                    $segments->lock();
                     $request = $request->getBuilder();
-                    $request->setParam("route", $segments);
+                    $request->setParam("route", new Map( array_filter($matches, "is_string", ARRAY_FILTER_USE_KEY) ));
 
                     break;
                 }
@@ -355,13 +334,13 @@ class SimpleRouter implements Middleware, Router {
         }
 
         if ($controller == null) {
-            return new HttpResponseBuilder(Response::STATUS_NOT_FOUND);;
+            return new HttpResponseBuilder(Response::STATUS_NOT_FOUND);
 
         } else if ($controller instanceof Controller) {
-            return $controller->onProcessRequest($request, $this);
+            return $controller->onProcessRequest($this, $request, $stack->process($request));
 
         } else {
-            return $controller($request, $this);
+            return $controller($this, $request, $stack->process($request));
         }
     }
 }

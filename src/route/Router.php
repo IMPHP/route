@@ -21,10 +21,14 @@
 
 namespace im\route;
 
+use im\http\msg\Request;
+use im\http\msg\Response;
+use im\http\Verbs;
+
 /**
  * Defines a router interface for launching controllers.
  */
-interface Router extends MethodFlags {
+interface Router extends Verbs {
 
     /**
      * Add a route to this router.
@@ -38,7 +42,7 @@ interface Router extends MethodFlags {
      * @param $flags
      *      Flags that defines what request methods are to be used with this controller
      */
-    function addRoute(string $path, string|Controller|callable $controller, int $flags = MethodFlags::M_ANY): void;
+    function addRoute(string $path, string|Controller|callable $controller, int $flags = Verbs::ANY): void;
 
     /**
      * Add a named route to this router.
@@ -58,7 +62,7 @@ interface Router extends MethodFlags {
      * @param $flags
      *      Flags that defines what request methods are to be used with this controller
      */
-    function addNamedRoute(string $name, string $path, string|Controller|callable $controller, int $flags = MethodFlags::M_ANY): void;
+    function addNamedRoute(string $name, string $path, string|Controller|callable $controller, int $flags = Verbs::ANY): void;
 
     /**
      * Built a complete path from a named route.
@@ -76,4 +80,12 @@ interface Router extends MethodFlags {
      *      This will return `NULL` if the named route does not exist
      */
     function getRoutePath(string $name, array $args = []): ?string;
+
+    /**
+     * Start processing a request
+     *
+     * @param $request
+     *      The request to process
+     */
+    function process(Request $request): Response;
 }

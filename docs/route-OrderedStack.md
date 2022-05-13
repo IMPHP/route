@@ -7,46 +7,46 @@ Provides an implementation of `im\route\MiddlewareStack`
 
 ## Synopsis
 ```php
-class OrderedStack implements im\route\MiddlewareStack, im\route\MethodFlags {
+class OrderedStack implements im\route\MiddlewareStack, im\http\Verbs uses im\http\res\VerbsImpl {
 
     // Inherited Constants
-    public int M_GET = 0x01
-    public int M_HEAD = 0x02
-    public int M_POST = 0x04
-    public int M_PUT = 0x08
-    public int M_DELETE = 0x10
-    public int M_CONNECT = 0x20
-    public int M_OPTIONS = 0x40
-    public int M_TRACE = 0x80
-    public int M_PATCH = 0x0100
-    public int M_ANY = 0x01FF
+    public int GET = 0x01
+    public int HEAD = 0x02
+    public int POST = 0x04
+    public int PUT = 0x08
+    public int DELETE = 0x10
+    public int CONNECT = 0x20
+    public int OPTIONS = 0x40
+    public int TRACE = 0x80
+    public int PATCH = 0x0100
+    public int ANY = 0x01FF
 
     // Methods
     public __construct()
-    public getFlags(string ...$methods): int
-    public addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\route\MiddlewareStack::M_ANY): void
+    public addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\http\Verbs::ANY): void
     public process(im\http\msg\Request $request): im\http\msg\Response
+    public verb2flags(string ...$methods): int
 }
 ```
 
 ## Constants
 | Name | Description |
 | :--- | :---------- |
-| [__OrderedStack&nbsp;::&nbsp;M\_GET__](route-OrderedStack-prop_M_GET.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_HEAD__](route-OrderedStack-prop_M_HEAD.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_POST__](route-OrderedStack-prop_M_POST.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_PUT__](route-OrderedStack-prop_M_PUT.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_DELETE__](route-OrderedStack-prop_M_DELETE.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_CONNECT__](route-OrderedStack-prop_M_CONNECT.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_OPTIONS__](route-OrderedStack-prop_M_OPTIONS.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_TRACE__](route-OrderedStack-prop_M_TRACE.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_PATCH__](route-OrderedStack-prop_M_PATCH.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;M\_ANY__](route-OrderedStack-prop_M_ANY.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;GET__](route-OrderedStack-prop_GET.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;HEAD__](route-OrderedStack-prop_HEAD.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;POST__](route-OrderedStack-prop_POST.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;PUT__](route-OrderedStack-prop_PUT.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;DELETE__](route-OrderedStack-prop_DELETE.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;CONNECT__](route-OrderedStack-prop_CONNECT.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;OPTIONS__](route-OrderedStack-prop_OPTIONS.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;TRACE__](route-OrderedStack-prop_TRACE.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;PATCH__](route-OrderedStack-prop_PATCH.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;ANY__](route-OrderedStack-prop_ANY.md) |  |
 
 ## Methods
 | Name | Description |
 | :--- | :---------- |
 | [__OrderedStack&nbsp;::&nbsp;\_\_construct__](route-OrderedStack-__construct.md) |  |
-| [__OrderedStack&nbsp;::&nbsp;getFlags__](route-OrderedStack-getFlags.md) |  |
 | [__OrderedStack&nbsp;::&nbsp;addMiddleware__](route-OrderedStack-addMiddleware.md) |  |
 | [__OrderedStack&nbsp;::&nbsp;process__](route-OrderedStack-process.md) |  |
+| [__OrderedStack&nbsp;::&nbsp;verb2flags__](route-OrderedStack-verb2flags.md) | Return flags based on one or more string methods |

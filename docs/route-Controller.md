@@ -10,7 +10,7 @@ Defines a controller than is used when adding a route in a `Router`
 interface Controller {
 
     // Methods
-    onProcessRequest(im\http\msg\Request $request, im\route\Router $router): im\http\msg\Response
+    onProcessRequest(im\route\Router $router, im\http\msg\Request $request, null|im\http\msg\Response $response = NULL): im\http\msg\Response
 }
 ```
 

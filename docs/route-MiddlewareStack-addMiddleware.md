@@ -7,7 +7,7 @@ Add a middleware to this stack
 
 ## Synopsis
 ```php
-addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\route\MethodFlags::M_ANY): void
+addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\http\Verbs::ANY): void
 ```
 
 ## Parameters

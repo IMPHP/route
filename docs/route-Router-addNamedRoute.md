@@ -10,7 +10,7 @@ a complete path using `getRoutePath()`.
 
 ## Synopsis
 ```php
-addNamedRoute(string $name, string $path, im\route\Controller|callable|string $controller, int $flags = im\route\MethodFlags::M_ANY): void
+addNamedRoute(string $name, string $path, im\route\Controller|callable|string $controller, int $flags = im\http\Verbs::ANY): void
 ```
 
 ## Parameters

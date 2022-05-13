@@ -7,7 +7,7 @@ Add a route to this router.
 
 ## Synopsis
 ```php
-addRoute(string $path, im\route\Controller|callable|string $controller, int $flags = im\route\MethodFlags::M_ANY): void
+addRoute(string $path, im\route\Controller|callable|string $controller, int $flags = im\http\Verbs::ANY): void
 ```
 
 ## Parameters

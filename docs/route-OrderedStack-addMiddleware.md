@@ -4,5 +4,5 @@ ____
 
 ## Synopsis
 ```php
-public addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\route\MiddlewareStack::M_ANY): void
+public addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\http\Verbs::ANY): void
 ```

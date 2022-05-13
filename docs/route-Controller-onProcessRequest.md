@@ -7,14 +7,15 @@ Called by the `Router` when the controller should process a matching request
 
 ## Synopsis
 ```php
-onProcessRequest(im\http\msg\Request $request, im\route\Router $router): im\http\msg\Response
+onProcessRequest(im\route\Router $router, im\http\msg\Request $request, null|im\http\msg\Response $response = NULL): im\http\msg\Response
 ```
 
 ## Parameters
 | Name | Description |
 | :--- | :---------- |
-| request | The request to process |
 | router | The router that called this controller |
+| request | The request to process |
+| response | Optional response to populate |
 
 ## Return
-The controller should return a response to serve to the calling client
+The controller returns a response to serve to the client

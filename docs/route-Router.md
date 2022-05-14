@@ -3,11 +3,11 @@
 ____
 
 ## Description
-Defines a router interface for launching controllers.
+Defines an extended router interface.
 
 ## Synopsis
 ```php
-interface Router implements im\http\Verbs {
+interface Router implements im\route\RouteEngine, im\http\Verbs {
 
     // Inherited Constants
     int GET = 0x01
@@ -22,12 +22,13 @@ interface Router implements im\http\Verbs {
     int ANY = 0x01FF
 
     // Methods
+    addEntryProvider(im\route\RouteEntryProvider $provider): void
     addRoute(string $path, im\route\Controller|callable|string $controller, int $flags = im\http\Verbs::ANY): void
     addNamedRoute(string $name, string $path, im\route\Controller|callable|string $controller, int $flags = im\http\Verbs::ANY): void
-    getRoutePath(string $name, array $args = Array): null|string
-    process(im\http\msg\Request $request): im\http\msg\Response
 
     // Inherited Methods
+    getRoutePath(string $name, array $args = Array): null|string
+    process(im\http\msg\Request $request): im\http\msg\Response
     verb2flags(string ...$methods): int
 }
 ```
@@ -49,6 +50,7 @@ interface Router implements im\http\Verbs {
 ## Methods
 | Name | Description |
 | :--- | :---------- |
+| [__Router&nbsp;::&nbsp;addEntryProvider__](route-Router-addEntryProvider.md) | Add a `RouteEntryProvider` to this router |
 | [__Router&nbsp;::&nbsp;addRoute__](route-Router-addRoute.md) | Add a route to this router |
 | [__Router&nbsp;::&nbsp;addNamedRoute__](route-Router-addNamedRoute.md) | Add a named route to this router |
 | [__Router&nbsp;::&nbsp;getRoutePath__](route-Router-getRoutePath.md) | Built a complete path from a named route |

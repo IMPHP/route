@@ -3,11 +3,11 @@
 ____
 
 ## Description
-Called by the `MiddlewareStack` when this middleware should start processing
+Called by the `StackEngine` when this middleware should start processing
 
 ## Synopsis
 ```php
-onProcess(im\http\msg\Request $request, im\route\MiddlewareStack $stack): im\http\msg\Response
+onProcess(im\http\msg\Request $request, im\route\StackEngine $stack): im\http\msg\Response
 ```
 
 ## Parameters

@@ -3,11 +3,11 @@
 ____
 
 ## Description
-Defines a Middleware stack
+Defines an extended Middleware stack
 
 ## Synopsis
 ```php
-interface MiddlewareStack implements im\http\Verbs {
+interface MiddlewareStack implements im\route\StackEngine, im\http\Verbs {
 
     // Inherited Constants
     int GET = 0x01
@@ -22,10 +22,11 @@ interface MiddlewareStack implements im\http\Verbs {
     int ANY = 0x01FF
 
     // Methods
-    addMiddleware(im\route\Middleware|callable|string $middleware, int $flags = im\http\Verbs::ANY): void
-    process(im\http\msg\Request $request): im\http\msg\Response
+    addEntryProvider(im\route\MiddlewareEntryProvider $provider): void
+    addMiddleware(im\route\Middleware|callable|string $middleware, int $order = 0, int $flags = im\http\Verbs::ANY): void
 
     // Inherited Methods
+    process(im\http\msg\Request $request): im\http\msg\Response
     verb2flags(string ...$methods): int
 }
 ```
@@ -47,6 +48,7 @@ interface MiddlewareStack implements im\http\Verbs {
 ## Methods
 | Name | Description |
 | :--- | :---------- |
+| [__MiddlewareStack&nbsp;::&nbsp;addEntryProvider__](route-MiddlewareStack-addEntryProvider.md) | Add a `MiddlewareEntryProvider` to this stack |
 | [__MiddlewareStack&nbsp;::&nbsp;addMiddleware__](route-MiddlewareStack-addMiddleware.md) | Add a middleware to this stack |
 | [__MiddlewareStack&nbsp;::&nbsp;process__](route-MiddlewareStack-process.md) | Start processing the first or next middleware in the stack |
 | [__MiddlewareStack&nbsp;::&nbsp;verb2flags__](route-MiddlewareStack-verb2flags.md) | Return flags based on one or more string methods |

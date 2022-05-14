@@ -10,11 +10,11 @@ Defines a controller than is used when adding a route in a `Router`
 interface Controller {
 
     // Methods
-    onProcessRequest(im\route\Router $router, im\http\msg\Request $request, null|im\http\msg\Response $response = NULL): im\http\msg\Response
+    onProcessRequest(im\route\RouteEngine $router, im\http\msg\Request $request, null|im\http\msg\Response $response = NULL): im\http\msg\Response
 }
 ```
 
 ## Methods
 | Name | Description |
 | :--- | :---------- |
-| [__Controller&nbsp;::&nbsp;onProcessRequest__](route-Controller-onProcessRequest.md) | Called by the `Router` when the controller should process a matching request |
+| [__Controller&nbsp;::&nbsp;onProcessRequest__](route-Controller-onProcessRequest.md) | Called by the `RouteEngine` when the controller should process a matching request |

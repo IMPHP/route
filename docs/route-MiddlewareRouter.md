@@ -9,7 +9,7 @@ This router can be added as middleware to a `MiddlewareStack`.
 
 ## Synopsis
 ```php
-class MiddlewareRouter implements im\route\Middleware, im\route\Router, im\http\Verbs uses im\http\res\VerbsImpl {
+class MiddlewareRouter implements im\route\Middleware, im\route\Router, im\http\Verbs, im\route\RouteEngine uses im\http\res\VerbsImpl {
 
     // Inherited Constants
     public int GET = 0x01
@@ -25,6 +25,7 @@ class MiddlewareRouter implements im\route\Middleware, im\route\Router, im\http\
 
     // Methods
     public __construct()
+    public addEntryProvider(im\route\RouteEntryProvider $provider): void
     public addRoute(string $path, im\route\Controller|callable|string $controller, int $flags = im\http\Verbs::ANY): void
     public addNamedRoute(string $name, string $path, im\route\Controller|callable|string $controller, int $flags = im\http\Verbs::ANY): void
     public getRoutePath(string $name, array $args = Array): null|string
@@ -51,6 +52,7 @@ class MiddlewareRouter implements im\route\Middleware, im\route\Router, im\http\
 | Name | Description |
 | :--- | :---------- |
 | [__MiddlewareRouter&nbsp;::&nbsp;\_\_construct__](route-MiddlewareRouter-__construct.md) |  |
+| [__MiddlewareRouter&nbsp;::&nbsp;addEntryProvider__](route-MiddlewareRouter-addEntryProvider.md) |  |
 | [__MiddlewareRouter&nbsp;::&nbsp;addRoute__](route-MiddlewareRouter-addRoute.md) | Add a route to this router |
 | [__MiddlewareRouter&nbsp;::&nbsp;addNamedRoute__](route-MiddlewareRouter-addNamedRoute.md) |  |
 | [__MiddlewareRouter&nbsp;::&nbsp;getRoutePath__](route-MiddlewareRouter-getRoutePath.md) | Built a complete path from a named route |

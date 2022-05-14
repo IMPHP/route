@@ -3,11 +3,11 @@
 ____
 
 ## Description
-Called by the `Router` when the controller should process a matching request
+Called by the `RouteEngine` when the controller should process a matching request
 
 ## Synopsis
 ```php
-onProcessRequest(im\route\Router $router, im\http\msg\Request $request, null|im\http\msg\Response $response = NULL): im\http\msg\Response
+onProcessRequest(im\route\RouteEngine $router, im\http\msg\Request $request, null|im\http\msg\Response $response = NULL): im\http\msg\Response
 ```
 
 ## Parameters

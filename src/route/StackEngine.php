@@ -25,24 +25,15 @@ use im\http\msg\Request;
 use im\http\msg\Response;
 
 /**
- * Defines a controller than is used when adding a route in a `Router`
+ * Defines a Middleware stack
  */
-interface Controller {
+interface StackEngine {
 
     /**
-     * Called by the `RouteEngine` when the controller should process a matching request
-     *
-     * @param $router
-     *      The router that called this controller
+     * Start processing the first or next middleware in the stack
      *
      * @param $request
      *      The request to process
-     *
-     * @param $response
-     *      Optional response to populate
-     *
-     * @return
-     *      The controller returns a response to serve to the client
      */
-    function onProcessRequest(RouteEngine $router, Request $request, Response $response = NULL): Response;
+    function process(Request $request): Response;
 }

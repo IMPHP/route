@@ -21,14 +21,12 @@
 
 namespace im\route;
 
-use im\http\msg\Request;
-use im\http\msg\Response;
 use im\http\Verbs;
 
 /**
- * Defines a router interface for launching controllers.
+ * Defines an extended router interface.
  */
-interface Router extends Verbs {
+interface Router extends RouteEngine, Verbs {
 
     /**
      * Add a `RouteEntryProvider` to this router.
@@ -73,29 +71,4 @@ interface Router extends Verbs {
      *      Flags that defines what request methods are to be used with this controller
      */
     function addNamedRoute(string $name, string $path, string|Controller|callable $controller, int $flags = Verbs::ANY): void;
-
-    /**
-     * Built a complete path from a named route.
-     *
-     * This method takes a route based on it's name and replaced any
-     * arguments with ones parsed in this call.
-     *
-     * @param $name
-     *      Name of the route
-     *
-     * @param $args
-     *      Arguments to replace within the route
-     *
-     * @return
-     *      This will return `NULL` if the named route does not exist
-     */
-    function getRoutePath(string $name, array $args = []): ?string;
-
-    /**
-     * Start processing a request
-     *
-     * @param $request
-     *      The request to process
-     */
-    function process(Request $request): Response;
 }

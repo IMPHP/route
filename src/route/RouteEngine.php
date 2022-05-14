@@ -25,24 +25,32 @@ use im\http\msg\Request;
 use im\http\msg\Response;
 
 /**
- * Defines a controller than is used when adding a route in a `Router`
+ * Defines a router interface for launching controllers.
  */
-interface Controller {
+interface RouteEngine {
 
     /**
-     * Called by the `RouteEngine` when the controller should process a matching request
+     * Built a complete path from a named route.
      *
-     * @param $router
-     *      The router that called this controller
+     * This method takes a route based on it's name and replaced any
+     * arguments with ones parsed in this call.
+     *
+     * @param $name
+     *      Name of the route
+     *
+     * @param $args
+     *      Arguments to replace within the route
+     *
+     * @return
+     *      This will return `NULL` if the named route does not exist
+     */
+    function getRoutePath(string $name, array $args = []): ?string;
+
+    /**
+     * Start processing a request
      *
      * @param $request
      *      The request to process
-     *
-     * @param $response
-     *      Optional response to populate
-     *
-     * @return
-     *      The controller returns a response to serve to the client
      */
-    function onProcessRequest(RouteEngine $router, Request $request, Response $response = NULL): Response;
+    function process(Request $request): Response;
 }

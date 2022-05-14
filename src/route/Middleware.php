@@ -30,7 +30,7 @@ use im\http\msg\Response;
 interface Middleware {
 
     /**
-     * Called by the `MiddlewareStack` when this middleware should start processing
+     * Called by the `StackEngine` when this middleware should start processing
      *
      * @param $request
      *      The request to process
@@ -38,5 +38,5 @@ interface Middleware {
      * @param $stack
      *      The middleware stack that called this middleware
      */
-    function onProcess(Request $request, MiddlewareStack $stack): Response;
+    function onProcess(Request $request, StackEngine $stack): Response;
 }

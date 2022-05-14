@@ -21,14 +21,12 @@
 
 namespace im\route;
 
-use im\http\msg\Request;
-use im\http\msg\Response;
 use im\http\Verbs;
 
 /**
- * Defines a Middleware stack
+ * Defines an extended Middleware stack
  */
-interface MiddlewareStack extends Verbs {
+interface MiddlewareStack extends StackEngine, Verbs {
 
     /**
      * Add a `MiddlewareEntryProvider` to this stack.
@@ -53,12 +51,4 @@ interface MiddlewareStack extends Verbs {
      *      Flags that defines what request methods are to be used with this middleware
      */
     function addMiddleware(string|Middleware|callable $middleware, int $order = 0, int $flags = Verbs::ANY): void;
-
-    /**
-     * Start processing the first or next middleware in the stack
-     *
-     * @param $request
-     *      The request to process
-     */
-    function process(Request $request): Response;
 }

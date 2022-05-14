@@ -2,9 +2,9 @@
 
 use PHPUnit\Framework\TestCase;
 use im\route\OrderedStack;
-use im\route\MiddlewareStack;
+use im\route\StackEngine;
 use im\route\MiddlewareRouter;
-use im\route\Router;
+use im\route\RouteEngine;
 use im\http\msg\Request;
 use im\http\msg\Response;
 use im\http\msg\HttpRequestBuilder;
@@ -18,7 +18,7 @@ final class MiddlewareTest extends TestCase {
      */
     public function test_middleware(): void {
         $stack = new OrderedStack();
-        $stack->addMiddleware(function(Request $request, MiddlewareStack $stack): Response {
+        $stack->addMiddleware(function(Request $request, StackEngine $stack): Response {
             $response = new HttpResponseBuilder();
             $response->getBody()->write("Response body");
 
@@ -39,7 +39,7 @@ final class MiddlewareTest extends TestCase {
      */
     public function test_router(): void {
         $router = new MiddlewareRouter();
-        $router->addRoute("/mypage/{id:number}/?test", function(Router $router, Request $request, Response $response): Response {
+        $router->addRoute("/mypage/{id:number}/?test", function(RouteEngine $router, Request $request, Response $response): Response {
             $response = new HttpResponseBuilder();
             $response->getBody()->write("Response body");
 

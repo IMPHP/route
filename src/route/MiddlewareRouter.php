@@ -300,7 +300,7 @@ class MiddlewareRouter implements Middleware, Router {
      * @internal
      */
     #[Override("im\route\Middleware")]
-    public function onProcess(Request $request, MiddlewareStack $stack): Response {
+    public function onProcess(Request $request, StackEngine $stack): Response {
         $controller = null;
         $path = $request->getUri()->getPath();
         $flag = $this->verb2flags( $request->getMethod() );

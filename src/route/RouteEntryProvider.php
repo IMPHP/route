@@ -21,44 +21,23 @@
 
 namespace im\route;
 
-use im\http\msg\Request;
-use im\http\msg\Response;
-use im\http\Verbs;
+use Traversable;
+use IteratorAggregate;
 
 /**
- * Defines a Middleware stack
+ *
+ *
  */
-interface MiddlewareStack extends Verbs {
+interface RouteEntryProvider extends IteratorAggregate {
 
     /**
-     * Add a `MiddlewareEntryProvider` to this stack.
+     * Returns an iterator with RouteEntry objects
      *
-     * This is used to provide middleware information outside of adding them via `addMiddleware()`.
-     *
-     * @param $provider
-     *      The provider to add
+     * @note
+     *      PHP does not support generics and as such there
+     *      is no absolut type forcing done. However, anyone
+     *      using objects that implements this interface, will expect the iterator
+     *      to return valid RouteEntry objects and may even do it's own type checking against it.
      */
-    function addEntryProvider(MiddlewareEntryProvider $provider): void;
-
-    /**
-     * Add a middleware to this stack
-     *
-     * @param $middleware
-     *      A middleware instance, class name or a callable
-     *
-     * @param $order
-     *      The order in which to run this middleware
-     *
-     * @param $flags
-     *      Flags that defines what request methods are to be used with this middleware
-     */
-    function addMiddleware(string|Middleware|callable $middleware, int $order = 0, int $flags = Verbs::ANY): void;
-
-    /**
-     * Start processing the first or next middleware in the stack
-     *
-     * @param $request
-     *      The request to process
-     */
-    function process(Request $request): Response;
+    function getIterator(): Traversable;
 }

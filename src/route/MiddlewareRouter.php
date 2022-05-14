@@ -30,6 +30,7 @@ use im\http\res\VerbsImpl;
 use im\util\MutableListArray;
 use im\util\Vector;
 use im\util\Map;
+use im\util\HashSet;
 use im\util\StringBuilder;
 use Exception;
 use stdClass;
@@ -46,11 +47,28 @@ class MiddlewareRouter implements Middleware, Router {
     /** @internal */
     protected MutableListArray $routes;
 
+    /** @internal */
+    protected MutableListArray $entryProviders;
+
     /**
      *
      */
     public function __construct() {
         $this->routes = new Vector();
+        $this->entryProviders = new HashSet();
+
+        /*
+         * Add internal entry provider
+         */
+        $this->entryProviders->add($this->routes);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    #[Override("im\route\Router")]
+    public function addEntryProvider(RouteEntryProvider $provider): void {
+        $this->entryProviders->add($provider);
     }
 
     /**
@@ -287,48 +305,59 @@ class MiddlewareRouter implements Middleware, Router {
         $path = $request->getUri()->getPath();
         $flag = $this->verb2flags( $request->getMethod() );
 
-        foreach ($this->routes as $routeInfo) {
-            if ($routeInfo->flags & $flag) {
-                $route = $this->compileRoute($routeInfo->route);
+        foreach ($this->entryProviders as $provider) {
+            foreach ($provider as $routeInfo) {
+                if ($routeInfo->flags & $flag) {
+                    $route = $this->compileRoute($routeInfo->route);
 
-                if (preg_match($route, $path, $matches)) {
-                    if (is_string($routeInfo->controller) && $routeInfo->controller[0] == "/") {
-                        $controller = $routeInfo->controller;
+                    if (preg_match($route, $path, $matches)) {
+                        if (is_string($routeInfo->controller) && $routeInfo->controller[0] == "/") {
+                            $controller = $routeInfo->controller;
 
-                        /*
-                         * Redirect, example: '/new/path'
-                         */
-                         if (strpos($controller, "$") !== false) {
-                             // Copy part of the original url '/old/:num:' -> '/new/path/$1'
-                             $controller = preg_replace($route, $controller, $path);
-                         }
+                            /*
+                             * Redirect, example: '/new/path'
+                             */
+                             if (strpos($controller, "$") !== false) {
+                                 // Copy part of the original url '/old/:num:' -> '/new/path/$1'
+                                 $controller = preg_replace($route, $controller, $path);
+                             }
 
-                         $uri = $request->getUri()->getBuilder();
-                         $uri->setPath($controller);
-                         $request->setUri($uri);
+                             $uri = $request->getUri()->getBuilder();
+                             $uri->setPath($controller);
+                             $request->setUri($uri);
 
-                         return $this->onProcess($request, $stack);
+                             return $this->onProcess($request, $stack);
+                        }
+
+                        if ($provider instanceof RouteEntryLoader) {
+                            if ($routeInfo->id == null) {
+                                throw new Exception("A 'RouteEntryLoader' must return entry id's");
+                            }
+
+                            $controller = $provider->loadController($routeInfo->id);
+
+                        } else {
+                            if (is_string($routeInfo->controller)
+                                    && class_exists($routeInfo->controller, true)
+                                    && is_subclass_of($routeInfo->controller, Controller::class)) {
+
+                                $controller = new ($routeInfo->controller)();
+
+                            } else if (is_callable($routeInfo->controller)
+                                    || (!is_string($routeInfo->controller) && $routeInfo->controller instanceof Controller)) {
+
+                                $controller = $routeInfo->controller;
+
+                            } else {
+                                throw new Exception("The class '". (is_string($routeInfo->controller) ? $routeInfo->controller : get_class($routeInfo->controller)) ."' must be a member of '". Controller::class ."'");
+                            }
+                        }
+
+                        $request = $request->getBuilder();
+                        $request->setParam("route", new Map( array_filter($matches, "is_string", ARRAY_FILTER_USE_KEY) ));
+
+                        break;
                     }
-
-                    if (is_string($routeInfo->controller)
-                            && class_exists($routeInfo->controller, true)
-                            && is_subclass_of($routeInfo->controller, Controller::class)) {
-
-                        $controller = new ($routeInfo->controller)();
-
-                    } else if (is_callable($routeInfo->controller)
-                            || (!is_string($routeInfo->controller) && $routeInfo->controller instanceof Controller)) {
-
-                        $controller = $routeInfo->controller;
-
-                    } else {
-                        throw new Exception("The class '". (is_string($routeInfo->controller) ? $routeInfo->controller : get_class($routeInfo->controller)) ."' must be a member of '". Controller::class ."'");
-                    }
-
-                    $request = $request->getBuilder();
-                    $request->setParam("route", new Map( array_filter($matches, "is_string", ARRAY_FILTER_USE_KEY) ));
-
-                    break;
                 }
             }
         }
@@ -336,11 +365,13 @@ class MiddlewareRouter implements Middleware, Router {
         if ($controller == null) {
             return new HttpResponseBuilder(Response::STATUS_NOT_FOUND);
 
-        } else if ($controller instanceof Controller) {
-            return $controller->onProcessRequest($this, $request, $stack->process($request));
-
         } else {
-            return $controller($this, $request, $stack->process($request));
+            if ($controller instanceof Controller) {
+                return $controller->onProcessRequest($this, $request, $stack->process($request));
+
+            } else {
+                return $controller($this, $request, $stack->process($request));
+            }
         }
     }
 }

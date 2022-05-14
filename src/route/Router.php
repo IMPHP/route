@@ -31,6 +31,16 @@ use im\http\Verbs;
 interface Router extends Verbs {
 
     /**
+     * Add a `RouteEntryProvider` to this router.
+     *
+     * This is used to provide route information outside of adding them via `addRoute()`.
+     *
+     * @param $provider
+     *      The provider to add
+     */
+    function addEntryProvider(RouteEntryProvider $provider): void;
+
+    /**
      * Add a route to this router.
      *
      * @param $path

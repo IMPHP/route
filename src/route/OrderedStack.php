@@ -28,6 +28,7 @@ use im\http\Verbs;
 use im\http\res\VerbsImpl;
 use im\util\MutableListArray;
 use im\util\Vector;
+use im\util\HashSet;
 use Exception;
 use stdClass;
 
@@ -42,26 +43,45 @@ class OrderedStack implements MiddlewareStack {
     protected MutableListArray $middleware;
 
     /** @internal */
+    protected MutableListArray $entryProviders;
+
+    /** @internal */
     protected int $level = 0;
 
     /** @internal */
-    protected int $offset = 0;
+    protected array $entries = [];
 
     /**
      *
      */
     public function __construct() {
         $this->middleware = new Vector();
+        $this->entryProviders = new HashSet();
+
+        /*
+         * Add internal entry provider
+         */
+        $this->entryProviders->add($this->middleware);
     }
 
     /**
      * @inheritDoc
      */
     #[Override("im\route\MiddlewareStack")]
-    public function addMiddleware(string|Middleware|callable $middleware, int $flags = Verbs::ANY): void {
+    public function addEntryProvider(MiddlewareEntryProvider $provider): void {
+        $this->entryProviders->add($provider);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    #[Override("im\route\MiddlewareStack")]
+    public function addMiddleware(string|Middleware|callable $middleware, int $order = 0, int $flags = Verbs::ANY): void {
         $mdInfo = new stdClass();
+        $mdInfo->id = null;
+        $mdInfo->order = $order;
         $mdInfo->flags = $flags;
-        $mdInfo->callee = $middleware;
+        $mdInfo->controller = $middleware;
 
         $this->middleware->add($mdInfo);
     }
@@ -71,43 +91,77 @@ class OrderedStack implements MiddlewareStack {
      */
     #[Override("im\route\MiddlewareStack")]
     public function process(Request $request): Response {
-        $this->level++;
-
-        $middleware = null;
         $flag = $this->verb2flags( $request->getMethod() );
 
-        while ($this->offset < $this->middleware->length()) {
-            $mdInfo = $this->middleware->get($this->offset++);
+        if ($this->level == 0) {
+            foreach ($this->entryProviders as $provider) {
+                foreach ($provider as $entry) {
+                    if ($entry->flags & $flag) {
+                        $new_entry = new stdClass();
+                        $new_entry->id = $entry->id;
+                        $new_entry->order = $entry->order;
+                        $new_entry->flags = $entry->flags;
+                        $new_entry->loader = null;
+                        $new_entry->controller = null;
 
-            if ($mdInfo->flags & $flag) {
-                $middleware = $mdInfo->callee; break;
+                        if ($provider instanceof MiddlewareEntryLoader) {
+                            if ($entry->id == null) {
+                                throw new Exception("A 'MiddlewareEntryLoader' must return entry id's");
+                            }
+
+                            $new_entry->loader = $provider;
+
+                        } else {
+                            $new_entry->controller = $entry->controller;
+                        }
+
+                        $this->entries[] = $new_entry;
+                    }
+                }
             }
+
+            usort($this->entries, function($entry_a, $entry_b) {
+                if ($entry_a->order == $entry_b->order) {
+                    return 0;
+                }
+
+                return $entry_a->order < $entry_b->order ? -1 : 1;
+            });
         }
 
-        if ($middleware == null) {
+        $entry = $this->entries[$this->level++] ?? null;
+
+        if ($entry == null) {
             $response = new HttpResponse();
 
         } else {
-            if (is_string($middleware)
-                    && class_exists($middleware, true)
-                    && is_subclass_of($middleware, Middleware::class)) {
-
-                $middleware = new ($middleware)();
-
-            } else if (!is_callable($middleware) && (is_string($middleware) || !($middleware instanceof Middleware))) {
-                throw new Exception("The class '". (is_string($middleware) ? $middleware : get_class($middleware)) ."' must be a member of '". Middleware::class ."'");
-            }
-
-            if ($middleware instanceof Middleware) {
-                $response = $middleware->onProcess($request, $this);
+            if ($entry->loader !== null) {
+                $controller = $entry->loader->loadController($entry->id);
 
             } else {
-                $response = $middleware($request, $this);
+                $controller = $entry->controller;
+
+                if (is_string($controller)
+                        && class_exists($controller, true)
+                        && is_subclass_of($controller, Middleware::class)) {
+
+                    $controller = new ($controller)();
+
+                } else if (!is_callable($controller) && (is_string($controller) || !($controller instanceof Middleware))) {
+                    throw new Exception("The class '". (is_string($controller) ? $controller : get_class($controller)) ."' must be a member of '". Middleware::class ."'");
+                }
+            }
+
+            if ($controller instanceof Middleware) {
+                $response = $controller->onProcess($request, $this);
+
+            } else {
+                $response = ($controller)($request, $this);
             }
         }
 
         if (--$this->level == 0) {
-            $this->offset = 0;
+            $this->entries = [];
         }
 
         return $response;

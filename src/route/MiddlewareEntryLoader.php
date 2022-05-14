@@ -21,44 +21,21 @@
 
 namespace im\route;
 
-use im\http\msg\Request;
-use im\http\msg\Response;
-use im\http\Verbs;
-
 /**
- * Defines a Middleware stack
+ * An extended provider that is able to custom load a controller
+ *
+ * There may be cases where customizations are required when loading
+ * a controller. This interface will allow the router to call upon
+ * this method and request a controller while allowing customizations
+ * to be made.
  */
-interface MiddlewareStack extends Verbs {
+interface MiddlewareEntryLoader extends MiddlewareEntryProvider {
 
     /**
-     * Add a `MiddlewareEntryProvider` to this stack.
+     * Load an return a controller
      *
-     * This is used to provide middleware information outside of adding them via `addMiddleware()`.
-     *
-     * @param $provider
-     *      The provider to add
+     * @param $entryId
+     *      A unique entry id, specified in `MiddlewareEntry`
      */
-    function addEntryProvider(MiddlewareEntryProvider $provider): void;
-
-    /**
-     * Add a middleware to this stack
-     *
-     * @param $middleware
-     *      A middleware instance, class name or a callable
-     *
-     * @param $order
-     *      The order in which to run this middleware
-     *
-     * @param $flags
-     *      Flags that defines what request methods are to be used with this middleware
-     */
-    function addMiddleware(string|Middleware|callable $middleware, int $order = 0, int $flags = Verbs::ANY): void;
-
-    /**
-     * Start processing the first or next middleware in the stack
-     *
-     * @param $request
-     *      The request to process
-     */
-    function process(Request $request): Response;
+    function loadController(mixed $entryId): Middleware|callable;
 }

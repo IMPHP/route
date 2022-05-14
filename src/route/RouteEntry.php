@@ -21,44 +21,31 @@
 
 namespace im\route;
 
-use im\http\msg\Request;
-use im\http\msg\Response;
-use im\http\Verbs;
-
 /**
- * Defines a Middleware stack
+ * This interface is used to define a route entry
+ *
+ * The interface is used together with `RouteEntryProvider`, to
+ * provide routes to a router.
+ *
+ * @var mixed id
+ *      Unique id for this entry
+ *
+ * @var string $name
+ *      Optional name of the route.
+ *
+ *      This can be used to generate a path from the route data.
+ *
+ * @var string $route
+ *      The actual route path
+ *
+ * @var int $flags
+ *      Flags indicating which request methods this route is for
+ *
+ *      @note
+ *          These flags can be found in 'im\http\Verbs'
+ *
+ * @var string|Controller|callable $controller
+ *      The controller to load for this route
+ *
  */
-interface MiddlewareStack extends Verbs {
-
-    /**
-     * Add a `MiddlewareEntryProvider` to this stack.
-     *
-     * This is used to provide middleware information outside of adding them via `addMiddleware()`.
-     *
-     * @param $provider
-     *      The provider to add
-     */
-    function addEntryProvider(MiddlewareEntryProvider $provider): void;
-
-    /**
-     * Add a middleware to this stack
-     *
-     * @param $middleware
-     *      A middleware instance, class name or a callable
-     *
-     * @param $order
-     *      The order in which to run this middleware
-     *
-     * @param $flags
-     *      Flags that defines what request methods are to be used with this middleware
-     */
-    function addMiddleware(string|Middleware|callable $middleware, int $order = 0, int $flags = Verbs::ANY): void;
-
-    /**
-     * Start processing the first or next middleware in the stack
-     *
-     * @param $request
-     *      The request to process
-     */
-    function process(Request $request): Response;
-}
+interface RouteEntry {}
